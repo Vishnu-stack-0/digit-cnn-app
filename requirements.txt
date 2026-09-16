@@ -1,6 +1,5 @@
 tensorflow==2.21.0
 streamlit
-streamlit-drawable-canvas
 numpy
 pillow
-matplotlib
+streamlit-drawable-canvas
