@@ -29,6 +29,10 @@ x_test = x_test / 255.0
 
 # --------------------------------------------------
 # 3. Create CNN model
+#
+# The Input layer here is required: it makes the
+# graph concrete, which is what lets the app read
+# each layer's output for the 3D view.
 # --------------------------------------------------
 
 model = models.Sequential([
@@ -134,4 +138,3 @@ model.save("digit_cnn.keras")
 
 print()
 print("Model saved as digit_cnn.keras")
-

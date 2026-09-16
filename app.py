@@ -4,6 +4,8 @@ import tensorflow as tf
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
 
+import cnn3d
+
 
 # --------------------------------------------------
 # Page configuration
@@ -37,8 +39,26 @@ model = load_model()
 
 
 # --------------------------------------------------
-# Canvas
+# Activation model
+#
+# Same weights, but returns every layer's output
+# instead of only the final prediction.
 # --------------------------------------------------
+
+@st.cache_resource
+def load_activation_model(_model):
+    return cnn3d.get_activation_model(_model)
+
+
+activation_model = load_activation_model(model)
+
+
+# --------------------------------------------------
+# Canvas (key bump remounts / clears the drawing)
+# --------------------------------------------------
+
+if "canvas_key" not in st.session_state:
+    st.session_state.canvas_key = 0
 
 canvas_result = st_canvas(
     fill_color="black",
@@ -48,16 +68,31 @@ canvas_result = st_canvas(
     width=280,
     height=280,
     drawing_mode="freedraw",
-    key="canvas",
+    key=f"canvas_{st.session_state.canvas_key}",
     return_image_data=True
 )
+
+
+# --------------------------------------------------
+# Buttons
+# --------------------------------------------------
+
+col_predict, col_refresh = st.columns(2)
+
+with col_predict:
+    predict_clicked = st.button("Predict digit")
+
+with col_refresh:
+    if st.button("Refresh input"):
+        st.session_state.canvas_key += 1
+        st.rerun()
 
 
 # --------------------------------------------------
 # Prediction
 # --------------------------------------------------
 
-if st.button("Predict digit"):
+if predict_clicked:
 
     if canvas_result.image_data is None:
         st.warning("Please draw a digit first.")
@@ -244,3 +279,26 @@ if st.button("Predict digit"):
         st.bar_chart(
             probabilities
         )
+
+
+        # --------------------------------------------------
+        # 16. 3D activation view
+        #
+        # Collects every layer's output for this image
+        # and renders it as a three.js scene.
+        # --------------------------------------------------
+
+        st.subheader("Inside the CNN")
+
+        st.caption(
+            "Drag to rotate, scroll to zoom. "
+            "Layers appear in forward-pass order."
+        )
+
+        payload = cnn3d.build_payload(
+            model,
+            activation_model,
+            image_array
+        )
+
+        cnn3d.render(payload)
